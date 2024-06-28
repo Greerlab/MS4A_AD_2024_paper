@@ -19,6 +19,8 @@ source("script/Seurat_functions.R")
 
 merged.obj = readRDS("data/merged.obj.rds")
 MG = readRDS("data/MG.rds")
+MG$classification = MG$classfication
+MG$classification[MG$classification%in%c("DAM1","DAM2")]="DAM"
 merged.obj$genotype = gsub("WT","Ntg-WT",merged.obj$genotype)
 merged.obj$genotype = gsub("6CKO","Ntg-6C KO",merged.obj$genotype)
 merged.obj$genotype = gsub("MAPT","Tg-WT",merged.obj$genotype)
@@ -441,52 +443,6 @@ ggplot(goEnrichment_top[1:20,], aes(x = Term, y = GeneRatio,
   coord_flip()+theme_bw()+ theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ggsave("plots/6CMT_vs_MAPT_GO_in_DAM.pdf", width = 10, height = 5)
 
-### MAPT enrich
-geneset_MAPT = rownames(DEGs1)[DEGs1$p_val_adj<0.05&DEGs1$avg_log2FC<0]
-GO_MAPT = topGOterms(fg.genes = geneset_MAPT, bg.genes = rownames(MG), organism = "Mouse")
-goEnrichment_top = GO_MAPT$res.result
-#### No significant enrichment
-
-# ## Try 1 vs 6
-# Idents(DAMs) = DAMs$seurat_clusters
-# DEGs = FindMarkers(DAMs, ident.1 = "1",ident.2 = "6",test.use = "MAST", latent.vars = "orig.ident")
-# 
-# ### cluster 1
-# geneset_1 = rownames(DEGs)[DEGs$p_val_adj<0.05&DEGs$avg_log2FC>0]
-# GO_cls1 = topGOterms(fg.genes = geneset_1, bg.genes = rownames(MG), organism = "Mouse")
-# goEnrichment_top = GO_cls1$res.result
-# goEnrichment_top$Term = paste(toupper(substr(goEnrichment_top$Term, 1, 1)), substr(goEnrichment_top$Term, 2, nchar(as.character(goEnrichment_top$Term))), sep="")
-# goEnrichment_top = goEnrichment_top[order(goEnrichment_top$GeneRatio,decreasing = F),]
-# goEnrichment_top$Term = factor(goEnrichment_top$Term, levels = goEnrichment_top$Term)
-# 
-# ggplot(goEnrichment_top[1:20,], aes(x = Term, y = GeneRatio,
-#                                     size = Significant))+
-#   geom_point(aes(colour = -log10(padj)))+
-#   scale_color_gradient(low = "red", high = "blue", name = "Adjusted p-value\n(-log10)")+
-#   theme_bw()+ggtitle("Biological pathway")+ylab("GeneRatio")+
-#   xlab("")+
-#   labs(size="Counts")+scale_size( range = c(3,6))+
-#   coord_flip()
-# ggsave("plots/Cls1_vs_Cls6_GO_in_MG.pdf", width = 10, height = 5)
-# 
-# ### cluster 6
-# geneset_6 = rownames(DEGs)[DEGs$p_val_adj<0.05&DEGs$avg_log2FC<0]
-# GO_cls6 = topGOterms(fg.genes = geneset_6, bg.genes = rownames(MG), organism = "Mouse")
-# goEnrichment_top = GO_cls6$res.result
-# goEnrichment_top$Term = paste(toupper(substr(goEnrichment_top$Term, 1, 1)), substr(goEnrichment_top$Term, 2, nchar(as.character(goEnrichment_top$Term))), sep="")
-# goEnrichment_top = goEnrichment_top[order(goEnrichment_top$GeneRatio,decreasing = F),]
-# goEnrichment_top$Term = factor(goEnrichment_top$Term, levels = goEnrichment_top$Term)
-# 
-# ggplot(goEnrichment_top, aes(x = Term, y = GeneRatio,
-#                                     size = Significant))+
-#   geom_point(aes(colour = -log10(padj)))+
-#   scale_color_gradient(low = "red", high = "blue", name = "Adjusted p-value\n(-log10)")+
-#   theme_bw()+ggtitle("Biological pathway")+ylab("GeneRatio")+
-#   xlab("")+
-#   labs(size="Counts")+scale_size( range = c(3,6))+
-#   coord_flip()
-# ggsave("plots/Cls6_vs_Cls1_GO_in_MG.pdf", width = 10, height = 5)
-
 # GO analysis between mapt,6c and 6c in all microglia
 Idents(MG) = MG$genotype
 DEGs = FindMarkers(MG, ident.1 = "Tg-6C KO",ident.2 = "Tg-WT",test.use = "MAST", latent.vars = "orig.ident")
@@ -661,7 +617,7 @@ ggplot(ggData, aes(Genotype, Value, fill = Cluster)) +
 ggsave("plots/Extended_Figure2C.pdf", width = 6, height = 4, units = "in")
 
 
-# Can you please make volcano plots for the gene lists attached for Mapt vs 6C;Mapt?
+# volcano plots for the gene lists attached for Mapt vs 6C;Mapt?
 genelist = read.xlsx("data/Gene_lists_TE4T2KO_TFEB_sensome_lysosome.xlsx")
 
 
@@ -726,7 +682,7 @@ DotPlot_scCustom(MG, features = rownames(MG)[rownames(MG)%in%genelist[,6]], x_la
 
 ggsave("plots/Dot_Mapt_vs_6CMT_Lysosomal_genes.pdf", width = 7, height = 7)
 
-# Can you please calculate and plot the % cell type composition by genotype? Also, if possible for neurons, can you break them down by inhibitory and inhibitory populations?
+#  calculate and plot the % cell type composition by genotype. for neurons, can you break them down by inhibitory and inhibitory populations.
 Neurons = subset(merged.obj, ident = "Neurons")
 Neurons = FindVariableFeatures(Neurons)
 Neurons = ScaleData(Neurons)
@@ -837,7 +793,7 @@ DotPlot_scCustom(MG, features = pmarkers$gene[1:15], x_lab_rotate = T)+
   geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5)
 ggsave("plots/Dot_plot_for_top_DEG_phagocytosis_gene_in_MG_by_genotype_expressed_at_least_25_percent.pdf", width = 7, height = 4)
 
-#Can you please make a violin plot to compare ApoE expression levels between genotypes in neurons, astrocytes, and microglia?
+# violin plot to compare ApoE expression levels between genotypes in neurons, astrocytes, and microglia.
 p1 = VlnPlot_scCustom(MG, features = "Apoe", group.by = "genotype", pt.size = 0.01, colors_use = scales::hue_pal()(4))+NoLegend()+xlab("")+ggtitle("Microglia")
 
 Idents(merged.obj) = merged.obj$cell_type
@@ -850,13 +806,13 @@ p3 = VlnPlot_scCustom(Astrocytes, features = "Apoe", group.by = "genotype", pt.s
 wrap_plots(list(p1,p2,p3), nrow = 1)
 ggsave("plots/Vln_plot_Apoe_in_MG_Neu_Ast.pdf", width = 7, height = 4)
 
-# Can you please tell me the total # of cell types, # of cells and # of microglia included in the analysis?
+# total # of cell types, # of cells and # of microglia included in the analysis
 
 Idents(merged.obj) = merged.obj$cell_type
 stats <- Cluster_Stats_All_Samples(seurat_object = merged.obj)
 write.xlsx(stats, "data/Cell_numbers.xlsx")
 
-#  can you please make a heatmap of ms4a expression in these cell types (myeloid including microglia and macrophages) as shown in this screenshot?
+# heatmap of ms4a expression in these cell types (myeloid including microglia and macrophages).
 celltype = c("Astrocytes", "Oligodendrocytes", "Neurons", "Endothelial cells", "Marcophages", "Microglia", "Vascular smooth muscle cells","Pericytes")
 Idents(merged.obj) = merged.obj$cell_type
 sub.obj = subset(merged.obj , idents = celltype)
@@ -947,10 +903,6 @@ p = ggbarplot(results, x = "cell_type", y = "value", fill = "lightblue",
 #   geom_hline(yintercept = mean(results2$value),linetype = "dashed")+geom_hline(yintercept = 0.25,linetype = "solid")
 ggsave(plot = p, "plots/Figure3B_3.pdf", width = 4, height = 7, units = "in")
 
-# 240427 Q1 Combine DAM1 and DAM2 into just one DAM population in the UMAP plots of DAMs by genotype and quantification
-MG = readRDS("data/MG.rds")
-MG$classification = MG$classfication
-MG$classification[MG$classification%in%c("DAM1","DAM2")]="DAM"
 
 ## 3F
 p = DimPlot(MG, group.by = "seurat_clusters", label = T)
@@ -994,32 +946,6 @@ ggplot(df, aes(classification, freq)) +
   scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1,1.5))+theme_classic2()+ylab("composition (%)")
 ggsave("plots/Figure3G_2.pdf", width = 5, height = 5, units = "in")
 
-# Can you please send me a list of the Mapt vs WT DEGs?
-Idents(MG) = MG$genotype
-DEGs = FindMarkers(MG, ident.1 = "Tg-WT",ident.2 = "Ntg-WT",test.use = "MAST", latent.vars = "orig.ident")
-DEGs$gene = rownames(DEGs)
-write.xlsx(DEGs, "data/Mapt_vs_WT_MG_DEGs.xlsx")
-saveRDS(DEGs, "data/DEG_Mapt_WT_in_MG.rds")
-# Can you please make a dot plot of this new list of phagolysosomal genes to compare expression by genotype?
-phg_data = read.xlsx("data/Phagolysosomal_genes_dot_plot.xlsx", colNames = F)
-p = DotPlot_scCustom(MG, features = phg_data$X1, x_lab_rotate = T)+
-  scale_colour_gradient2(low = "blue", mid = "white", high = "Red") +
-  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5)
-ggsave("plots/Dot_plot_for_new_phagocytosis_gene_in_MG_by_genotype.pdf", width = 8, height = 4)
-
-# And also a dot plot of the phagocytosis GO term genes? It's it's too many for one plot, you can split them up.
-
-go_data = read.xlsx("data/GO_term_summary_20240423_150452.xlsx")
-go_data = unique(go_data$Symbol)
-
-for (i in 1:9) {
-  genes = go_data[(i*28-27):(i*28)]
-  p = DotPlot_scCustom(MG, features = genes, x_lab_rotate = T)+
-    scale_colour_gradient2(low = "blue", mid = "white", high = "Red") +
-    geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5)
-  ggsave(plot = p, paste0("plots/Dot_plot_GO_genes_set",i,".pdf"), width = 15, height = 4)
-  
-}
 
 # Volcano plots of Mapt vs WT, 6C;Mapt vs WT, and Mapt vs 6C;Mapt
 MAPT_WT = readRDS("data/DEG_Mapt_WT_in_MG.rds")
@@ -1042,14 +968,6 @@ p = EnhancedVolcano(MAPT_WT,
                 gridlines.minor = FALSE)
 ggsave(plot = p, filename = "plots/Extended_Figure2A_1.pdf", width = 7, height = 7)
 
-EnhancedVolcano(MT6C_WT,
-                lab = rownames(MT6C_WT),
-                x = 'avg_log2FC',
-                y = 'p_val_adj', 
-                title = "Tg-6C KO vs Ntg-WT",
-                subtitle = "",
-)
-ggsave("plots/Vlo_Mapt6c_vs_WT_in_MG.pdf", width = 7, height = 7)
 
 EnhancedVolcano(MAPT_MT6C,
                 lab = rownames(MAPT_MT6C),
@@ -1061,63 +979,4 @@ EnhancedVolcano(MAPT_MT6C,
 )
 ggsave("plots/Extended_Figure2A_2.pdf", width = 7, height = 7)
 
-# Find the # and identity of genes that were reverted back to WT expression levels 
-# in 6C;Mapt among the DEGs that are higher in Mapt compared to WT. 
-# And can you please make a plot to visualize this reversion, 
-# something like a 4 way plot of the fold changes comparing Mapt vs WT along 
-# one axis and 6C;Mapt vs WT along the other?
-
-DEGs = FindAllMarkers(MG,test.use = "MAST", latent.vars = "orig.ident")
-saveRDS(DEGs, "data/MG_genotype_DEG.rds")
-
-target_genes = DEGs$gene[DEGs$cluster=="Tg-WT"&DEGs$p_val_adj<0.05]
-gene_counts = table(DEGs$gene)
-gene_counts = gene_counts[gene_counts==1]
-target_genes = names(gene_counts)[names(gene_counts)%in%target_genes]
-
-##
-DEGs_MAPT_WT = FindMarkers(MG, ident.1 = "Tg-WT", ident.2 = "Ntg-WT", logfc.threshold = 0, min.pct = 0,test.use = "MAST", latent.vars = "orig.ident")
-DEGs_MT6C_WT = FindMarkers(MG, ident.1 = "Tg-6C KO", ident.2 = "Ntg-WT", logfc.threshold = 0, min.pct = 0,test.use = "MAST", latent.vars = "orig.ident")
-DEGs_MT6C_WT = DEGs_MT6C_WT[rownames(DEGs_MAPT_WT),]
-all(rownames(DEGs_MAPT_WT) == rownames(DEGs_MT6C_WT))
-
-df = cbind.data.frame("gene" = rownames(DEGs_MAPT_WT),
-                      "Tg-WT vs Ntg-WT" = DEGs_MAPT_WT$avg_log2FC,
-                      "Tg-6C KO vs Ntg-WT" = DEGs_MT6C_WT$avg_log2FC)
-df$group = NA
-df$group[df$gene%in%rownames(DEGs_MAPT_WT)[DEGs_MAPT_WT$p_val_adj<0.05]] = "DEG in Tg-WT vs Ntg-WT"
-df$group[df$gene%in%rownames(DEGs_MT6C_WT)[DEGs_MT6C_WT$p_val_adj<0.05]] = "DEG in Tg-6C KO vs Ntg-WT"
-df$group[df$gene%in%rownames(DEGs_MT6C_WT)[DEGs_MT6C_WT$p_val_adj<0.05]&df$gene%in%rownames(DEGs_MAPT_WT)[DEGs_MAPT_WT$p_val_adj<0.05]] = "Both"
-df$group[abs(df$`Tg-WT vs Ntg-WT`)<0.5] = NA
-df$group[abs(df$`Tg-6C KO vs Ntg-WT`)<0.5] = NA
-#df$group = factor(df$group, levels = rev(c("DEG in Tg-WT vs Ntg-WT","Both","DEG in Tg-6C KO vs Ntg-WT",NA)))
-df = df[order(sample(df$gene),na.last = F),]
-df$alpha_value = 0.5
-df$alpha_value[is.na(df$group)]=0.1
-ggplot(df, aes(x = `Tg-WT vs Ntg-WT`, y = `Tg-6C KO vs Ntg-WT`, color = group, alpha = alpha_value))+geom_point()+coord_fixed()+ guides(alpha = "none")
-ggsave("plots/FC_in_Tg-WT vs Ntg-WT and Tg-6C KO vs Ntg-WT.pdf", width = 20, height = 15)
-write.xlsx(df, "data/FC_in_Tg-WT vs Ntg-WT and Tg-6C KO vs Ntg-WT.xlsx")
-
-
-# Can you please make a dot plot of this new list of phagolysosomal genes to compare expression by genotype?
-phg_data = read.xlsx("data/Phagolysosomal_genes_dot_plot_v2.xlsx", colNames = F)
-p = DotPlot_scCustom(MG, features = phg_data$X1, x_lab_rotate = T)+
-  scale_colour_gradient2(low = "blue", mid = "white", high = "Red") +
-  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5)
-ggsave("plots/Dot_plot_for_new_phagocytosis_gene_in_MG_by_genotype_v2.pdf", width = 8, height = 4)
-
-phg_data = read.xlsx("data/Phagocytosis_genes_dot_plot_v3.xlsx", colNames = F)
-p = DotPlot_scCustom(MG, features = phg_data$X1, x_lab_rotate = T)+
-  scale_colour_gradient2(low = "blue", mid = "white", high = "Red") +
-  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5)
-ggsave("plots/Dot_plot_for_new_phagocytosis_gene_in_MG_by_genotype_v3.pdf", width = 8, height = 4)
-
-# Trem2 expression Vln in Microglia and Macrophage
-
-Idents(merged.obj) = merged.obj$cell_type
-p1 = VlnPlot_scCustom(merged.obj, features = "Trem2", group.by = "genotype", pt.size = 0.01, idents = "Microglia", colors_use = scales::hue_pal()(4))+NoLegend()+xlab("")+ggtitle("Microglia")
-p2 = VlnPlot_scCustom(Macrophage, features = "Trem2", group.by = "genotype", pt.size = 0.01, idents = "Marcophages", colors_use = scales::hue_pal()(4))+NoLegend()+xlab("")+ggtitle("Macrophage")
-
-wrap_plots(list(p1,p2), nrow = 1)
-ggsave("plots/Vln_plot_Trem2_in_MG_Mac.pdf", width = 5, height = 4)
 
